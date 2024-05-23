@@ -1,3 +1,26 @@
+
+import warnings
+import math
+import numpy as np
+
+# Plotting Imports
+import shapely
+import cartopy.crs as ccrs
+import cartopy.geodesic
+import matplotlib.pyplot as plt
+
+# Brahe Imports
+import brahe as bh
+import brahe.data_models as bdm
+import brahe.access.access as ba
+
+# Here we can download the latest Earth orientation data and load it.
+
+# Uncomment this line ONCE the data has been downloaded. Recomment it once it has been downloaded.
+# bh.utils.download_iers_bulletin_ab()
+# Load the latest Earth Orientation Data
+# bh.EOP.load('iau2000A_finals_ab.txt')
+
 def filter_cartopy_warnings():
     global APPLIED_FILTER_WARNINGS
 
@@ -100,19 +123,92 @@ def compute_earth_interior_angle(ele=0.0, alt=525):
 
     return lam
 
-def proparea(height_incl):
-    num = len(height_incl) / 2
-    epc0 = bh.Epoch(2024, 5, 20, 0, 0, 0)
+def current_epoch(dt):
+    epc = bh.Epoch(2024, 5, 20, 0, 0, 0) + dt
+    return epc
+
+def get_tle_mult_sats_initial(height_incl):
+    n = len(height_incl) / 2
+    num = int(n)
+    epc0 = current_epoch(0)
     ecc = 0.001
     raan = 45
     argp = 90
-    M = 0
+    M = 45
     norad_id = 99999
     
-    tle_list_initial = []
-    for i in num:
-        tle_list_initial.append(get_tle(epc0, height_incl(i), ecc, height_incl(num + i), raan, argp, M, norad_id=norad_id))
+    tle_list = []
+    for i in range(num):
+        tle_list.append(get_tle(epc0, height_incl[i], ecc, height_incl[num + i], raan, argp, M, norad_id=norad_id))
+    
+    return tle_list
 
+def get_coords_mult_sats(height_incl, dt):
+    n = len(height_incl) / 2
+    num = int(n)
+    # epc = current_epoch(dt)
+    # epc0 = current_epoch(0)
+    epc0 = bh.Epoch(2022, 5, 20, 0, 0, 0)
+    ecc = 0.001
+    raan = 45
+    argp = 90
+    M = 45
+    norad_id = 99999
+    t = epc0 + dt
+    
+    # tle_list = []
+    coord_list = []
+    for i in range(num):
+        tle_current_sat = get_tle(epc0, height_incl[i], ecc, height_incl[num + i], raan, argp, M, norad_id=norad_id)
+        # tle_list.append(tle_current_sat)
+        x_ecef = tle_current_sat.state_ecef(t)
+        x_geod = bh.sECEFtoGEOD(x_ecef[0:3], use_degrees=True) 
+        coord_list.append(x_geod[0:2])
+    return coord_list
+
+def get_alt_mult_sats(height_incl, dt):
+    n = len(height_incl) / 2
+    num = int(n)
+    # epc = current_epoch(dt)
+    # epc0 = current_epoch(0)
+    epc0 = bh.Epoch(2022, 5, 20, 0, 0, 0)
+    ecc = 0.001
+    raan = 45
+    argp = 90
+    M = 45
+    norad_id = 99999
+    t = epc0 + dt
+    
+    # tle_list = []
+    alt_list = []
+    for i in range(num):
+        tle_current_sat = get_tle(epc0, height_incl[i], ecc, height_incl[num + i], raan, argp, M, norad_id=norad_id)
+        # tle_list.append(tle_current_sat)
+        x_ecef = tle_current_sat.state_ecef(t)
+        x_geod = bh.sECEFtoGEOD(x_ecef[0:3], use_degrees=True) 
+        alt_list.append(x_geod[2])
+    return alt_list
+
+'''
+def get_current_coords(tle_list, dt):
+    n = len(tle_list)
+    time = current_epoch(dt)
+    # t = epc0 + time_step
+    geod_info = []
+    for i in range(n):
+        tle_current_sat = tle_list[i]
+        x_ecef = tle_current_sat.state_ecef(time)
+        x_geod = bh.sECEFtoGEOD(x_ecef[0:3], use_degrees=True)
+        geod_info.append(x_geod)
+    
+    return geod_info
+'''
+        
+
+
+
+
+'''
     time_step = 1
     time = 1
     while time < 11:
@@ -123,13 +219,4 @@ def proparea(height_incl):
             x_ecef = tle_list_initial[i].state_ecef(t)
             x_geod = bh.sECEFtoGEOD(x_ecef[0:3], use_degrees=True)
             alt = x_geod[2]
-
-    
-
-
-
-
-
-
-
-
+'''
