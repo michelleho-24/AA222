@@ -9,6 +9,8 @@ import cartopy.feature as cfeature
 import csv
 from matplotlib.patches import Circle
 from shapely.geometry import Point
+import json
+from shapely.geometry import shape
 
 def read_csv_file(file_path):
     lat_lon = []
@@ -49,7 +51,6 @@ rows, columns = lat_lon.shape
 num_points  = rows
 num_sat = columns/2
 heights = np.array([500,500,500])
-ele = 0.0
 
 constellation_coverage = MultiPolygon()
 original_coverage = MultiPolygon()
@@ -76,7 +77,26 @@ constellation = Polygon()
 for sat in constellation_coverage: 
     constellation = constellation.union(sat)
 
-area_covered = constellation.area
+def write_polygon(polygon, filename):
+    geojson ={
+        "type":"Feature",
+        "properties":{},
+        "geometry": polygon.__geo_interface__
+    }
+    with open(filename, "w") as f: 
+        json.dump(geojson,f)
+
+def read_polygon(filename):
+    with open(filename, "r") as f: 
+        geojson = json.load(f)
+
+    polygon = shape(geojson['geometry'])
+    return polygon
+
+# area_covered = constellation.area
+write_polygon(constellation, "test.geojson")
+
+const = read_polygon("test.geojson")
 
 def plot_coverage(coverage, filename): 
     fig, ax = plt.subplots(figsize=(10,8))
@@ -95,7 +115,7 @@ def plot_coverage(coverage, filename):
     plt.savefig(filename, bbox_inches = 'tight', pad_inches = 0.1)
     plt.close()
 
-plot_coverage(constellation, "test_coverage.png")
+plot_coverage(const, "test_coverage.png")
 
 # could calculate the original surface area coverage 
 # and then do a union of that with the new area coverage 

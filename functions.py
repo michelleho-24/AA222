@@ -14,6 +14,8 @@ import cartopy.feature as cfeature
 import csv
 from matplotlib.patches import Circle
 from shapely.geometry import Point
+import json
+from shapely.geometry import shape
 
 # Here we can download the latest Earth orientation data and load it.
 
@@ -194,23 +196,6 @@ def calculate_coverage_area(lat, lon, alt, ele):
     coverage_area = Point(lon, lat).buffer(radius)
     return coverage_area
 
-def plot_coverage(coverage, filename): 
-        fig, ax = plt.subplots(figsize=(10,8))
-        ax = fig.add_subplot(1,1,1,projection=ccrs.PlateCarree())
-        ax.stock_img()
-        # for polygon in coverage.geoms: 
-        ax.plot(*coverage.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
-        ax.set_global()
-        ax.coastlines()
-        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
-        ax.set_xlabel('Longitude')
-        ax.set_ylabel('Latitude')
-        ax.set_title('Coverage Area')
-        plt.grid(True)
-        # plt.show()
-        plt.savefig(filename, bbox_inches = 'tight', pad_inches = 0.1)
-        plt.close()
-
 def compute_area(coords, alt_sats, inclination):
     alt = np.copy(alt_sats)
     # input is an array 
@@ -282,3 +267,37 @@ def calculate_lat_lon(sats_initial):
             
             coords.append(coords_row)  
             return coords
+
+def plot_coverage(coverage, filename): 
+        # coverage is a polygon 
+        fig, ax = plt.subplots(figsize=(10,8))
+        ax = fig.add_subplot(1,1,1,projection=ccrs.PlateCarree())
+        ax.stock_img()
+        # for polygon in coverage.geoms: 
+        ax.plot(*coverage.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
+        ax.set_global()
+        ax.coastlines()
+        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+        ax.set_xlabel('Longitude')
+        ax.set_ylabel('Latitude')
+        ax.set_title('Coverage Area')
+        plt.grid(True)
+        # plt.show()
+        plt.savefig(filename, bbox_inches = 'tight', pad_inches = 0.1)
+        plt.close()
+
+def write_polygon(polygon, filename):
+    geojson ={
+        "type":"Feature",
+        "properties":{},
+        "geometry": polygon.__geo_interface__
+    }
+    with open(filename, "w") as f: 
+        json.dump(geojson,f)
+
+def read_polygon(filename):
+    with open(filename, "r") as f: 
+        geojson = json.load(f)
+
+    polygon = shape(geojson['geometry'])
+    return polygon
