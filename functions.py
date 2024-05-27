@@ -172,7 +172,18 @@ def compute_earth_interior_angle(ele, alt):
     # elevation in degrees and altitude in meters 
     #R_EARTH = 6278*1e3 # radius of earth in meters
     ele = ele * math.pi / 180.0
-    rho = math.asin(bh.R_EARTH/(bh.R_EARTH + (alt*1000)))
+    # rho = math.asin(bh.R_EARTH/(bh.R_EARTH + (alt*1000)))
+    # Calculate the argument for math.asin
+    arg = bh.R_EARTH/(bh.R_EARTH + (alt*1000))
+
+    # Check if the argument is within the valid range for math.asin
+    if arg < -1:
+        arg = -1
+    elif arg > 1:
+        arg = 1
+
+    # Now it's safe to call math.asin
+    rho = math.asin(arg)
     eta = math.asin(math.cos(ele)*math.sin(rho))
     lam = math.pi/2.0 - eta - ele
     return lam #returns in radians 
@@ -221,7 +232,7 @@ def compute_area(coords, alt_sats, inclination):
     for i in range(0,int(num_sat)-1):
         x = i*2
         satellite_coverage = [] # Initialize satellite coverage
-        print(lat_lon.size)
+        # print(lat_lon.size)
         lat = lat_lon[:,x] # extract latitude 
         n = x+1
         lon = lat_lon[:,n] # extract longitude 

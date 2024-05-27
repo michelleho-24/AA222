@@ -22,6 +22,8 @@ import csv
 from matplotlib.patches import Circle
 from shapely.geometry import Point
 
+from scipy.optimize import minimize 
+
 n = 6
 # An n-satellite constellation loses m satellites and must reconfigure
 
@@ -45,6 +47,17 @@ missing = 0 # the first satellite goes missing
 del alt_sats[missing]
 del inclination[missing]
 
+del alt_sats[missing]
+del inclination[missing]
+
+del alt_sats[missing]
+del inclination[missing]
+
+del alt_sats[missing]
+del inclination[missing]
+
+del alt_sats[missing]
+del inclination[missing]
 
 # print(alt_sats)
 
@@ -57,6 +70,7 @@ input_vec.extend(inclination)
 
 # OPTIMIZE find_difference(new_coords) 
 # Find the difference between the original area and the new area
+
 
 
 
@@ -74,13 +88,28 @@ def find_difference(input_vec):
     # for x in original_area: 
     area_overlap = area_overlap.intersection(original_area)
     
-    return area_overlap
+    return -area_overlap.area
+
+x0 = input_vec
+constraints = [
+    {'type': 'ineq', 'fun': lambda x:  x[n-1:]},  # x[n-1:] represents inclination
+    {'type': 'ineq', 'fun': lambda x:  180 - x[n-1:]}  # These two form the bounds for inclination
+]
+constraints += [{'type': 'ineq', 'fun': lambda x, i=i: x[i] - 500} for i in range(n-1)]
+constraints += [{'type': 'ineq', 'fun': lambda x, i=i: 650 - x[i]} for i in range(n-1)]
+for method in ['L-BFGS-B']: # 'COBYLA', 'SLSQP'
+    for i in range(10):
+        res = minimize(find_difference, x0, constraints=constraints, method=method,
+                options={'xatol': 1e-8, 'disp': True})
+        if res.success:
+            print(method, res.x)
+            break
 
 
 
 area = find_difference(input_vec)
+# # print(area)
+# # functions.plot_coverage(area, "test_coverage.png")
+# # functions.plot_coverage(original_area, "original_coverage.png")
+# print(original_area.area)
 # print(area)
-# functions.plot_coverage(area, "test_coverage.png")
-# functions.plot_coverage(original_area, "original_coverage.png")
-print(original_area.area)
-print(area.area)
