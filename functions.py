@@ -91,7 +91,6 @@ def get_tle(epc0, alt, ecc, inc, raan, argp, M, ndt2=0.0, nddt6=0.0, bstar=0.0, 
     Returns:
     - tle (TLE): TLE object for the given orbital elements
     '''
-
     alt *= 1e3 # Convert to meters
 
     # Get semi-major axis

@@ -23,6 +23,7 @@ from matplotlib.patches import Circle
 from shapely.geometry import Point
 
 from scipy.optimize import minimize, Bounds 
+import pyswarms as ps 
 
 n = 6
 # An n-satellite constellation loses m satellites and must reconfigure
@@ -48,7 +49,6 @@ del alt_sats[missing]
 del inclination[missing]
 
 # print(alt_sats)
-
 
 input_vec = []
 input_vec.extend(alt_sats) 
@@ -79,12 +79,9 @@ def find_difference(input_vec):
 x0 = input_vec
 
 # Define lower and upper bounds for alt_sats and inclination
-# lower_bounds = [500]*(n-1) + [0]*(len(input_vec)-(n-1))
-# upper_bounds = [650]*(n-1) + [180]*(len(input_vec)-(n-1))
+lower_bounds = [500]*(n-1) + [0]*(len(x0)-(n-1))
 
-lower_bounds = [500]*(n-1) + [-np.inf]*(len(x0)-(n-1))
-upper_bounds = [650]*(n-1) + [np.inf]*(len(x0)-(n-1))
-
+upper_bounds = [650]*(n-1) + [180]*(len(x0)-(n-1))
 
 # # Create bounds object
 bounds = Bounds(lower_bounds, upper_bounds)
@@ -98,9 +95,24 @@ for method in ['L-BFGS-B']:
             print(method, res.x)
             break
 
+# Set up hyperparameters
+options = {'c1': 0.5, 'c2': 0.3, 'w':0.9}
 
+# Create bounds
+bounds = [(lower, upper) for lower, upper in zip(lower_bounds, upper_bounds)]
+max_bound = np.array(upper_bounds)
+min_bound = np.array(lower_bounds)
+bounds = (min_bound, max_bound)
 
+# Initialize swarm
+optimizer = ps.single.GlobalBestPSO(n_particles=1, dimensions=len(x0), options=options, bounds=bounds)
 
+# Perform optimization
+cost, pos = optimizer.optimize(find_difference, iters=1000)
+print(pos)
+# Evaluate the function at the optimal position
+optimal_function_value = find_difference(pos)
+print(optimal_function_value)
 
 # optimize the area_coverage objective function 
 def find_difference_2(input_vec):
@@ -115,14 +127,14 @@ def find_difference_2(input_vec):
     # for x in original_area: 
     area_overlap = area_overlap.intersection(original_area)
 
-    functions.write_polygon(area_overlap, "area_overlap.geojson")
+    functions.write_polygon(area_overlap, "area_swarm.geojson")
     functions.write_polygon(original_area, "original.geojson")
 
-area = find_difference_2(res.x)
+area = find_difference_2(pos)
 
 
-# # print(area)
-# # functions.plot_coverage(area, "test_coverage.png")
-# # functions.plot_coverage(original_area, "original_coverage.png")
+# print(area)
+# functions.plot_coverage(area, "test_coverage.png")
+# functions.plot_coverage(original_area, "original_coverage.png")
 # print(original_area.area)
 # print(area)
