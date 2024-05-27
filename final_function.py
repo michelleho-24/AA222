@@ -28,7 +28,7 @@ n = 6
 # Initialize heights and altitudes for satellites 
 alt_sats = [550 for _ in range(n)]
 # print(len(alt_sats))
-inclination = np.arange(0, 360, 360/n).tolist()
+inclination = np.arange(0, 180, 180/n).tolist()
 sats_initial = []
 sats_initial.extend(alt_sats)
 sats_initial.extend(inclination)
