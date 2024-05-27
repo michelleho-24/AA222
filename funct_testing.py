@@ -1,6 +1,7 @@
 import warnings
 import math
 import numpy as np
+import csv
 
 # Plotting Imports
 import shapely
@@ -16,41 +17,63 @@ import functions
 
 # sat 1: height = 555000m, inclination = 30 deg
 # sat 2: height = 600000m, inclination = 60 deg
-sats_initial = [555000, 600000, 30, 60]
-coords_initial = functions.get_coords_mult_sats(sats_initial, 0)
-alt_initial = functions.get_alt_mult_sats(sats_initial, 0)
-# print(coords_initial)
-# print(alt_initial)
+# sat 3: height = 500000m, inclination = 45 deg
+# sat 4: height = 530000m, inclination = 35 deg
+sats_initial = [555000, 600000, 500000, 530000, 30, 60, 45, 35] 
+coords_initial = functions.get_coords_mult_sats(sats_initial, 0) # find intial coordinates of each satellite 
+alt_initial = functions.get_alt_mult_sats(sats_initial, 0)       # find initial altitude of each satellite 
 
-# propagate by 10 minutes, extract coordinate data every 60 seconds 
-end_time = 10 * 60
-dt = 60
+
+num_sats = int(len(sats_initial) / 2) # define number of satellites in problem 
+coord_info = {}                       # define emtpy dictionary to carry through coordinate information 
+alt_info = {}                         # define emtpy dictionary to carry through altitude information 
+for i in range(num_sats):
+    coord_info[f'coords_sat_{i}'] = []
+    alt_info[f'alt_sat_{i}'] = []
+
+end_time = 60 * 60      # propagate by 60 minutes 
+dt = 60                 # extract coordinate data every 60 seconds 
 
 height_incl = sats_initial
-coords = []
-coords_sat1 = []
-coords_sat2 = []
-alt = []
+coords = []             # empty list for coordinate information 
+alt = []                # empty list for altitude information 
 for time in range(0, end_time + 60, dt):
-    coords_current = functions.get_coords_mult_sats(height_incl, time)
-    coords_sat1.append(coords_current[0])
-    coords_sat2.append(coords_current[1])
-    coords.append(coords_current)
-    alt_current = functions.get_alt_mult_sats(height_incl, time)
-    alt.append(alt_current)
-    # update height and inclination 
-    # height_incl = [alt_current[0], alt_current[1], 30, 60]
+    coords_current = functions.get_coords_mult_sats(height_incl, time)  # get coord info for current time step
+    alt_current = functions.get_alt_mult_sats(height_incl, time)        # get alt info for current time step
+    
+    coords_row = []   # define empty array for csv writing 
 
-# print(coords_sat1)
-# print(coords_sat2)
-# print(alt)
+    for i in range(num_sats):
+        coord_info[f'coords_sat_{i}'].append(coords_current[i])
+        alt_info[f'alt_sat_{i}'].append(alt_current[i])
+        coords_row.extend(coords_current[i])            # "flatten" lat/long for each satellite into the same row  
+    
+    coords.append(coords_row)                           # keep track of each satellites lat/long at specific time step 
 
+# Write the collected coordinates to a CSV file
+with open('satellite_coordinates.csv', 'w', newline='') as csvfile:
+    csvwriter = csv.writer(csvfile)
+    
+    # Write header
+    header = []
+    for i in range(num_sats):
+        header.append(f'lat_sat_{i}')
+        header.append(f'lon_sat_{i}')
+    csvwriter.writerow(header)
+    
+    # Write data rows
+    for row in coords:
+        csvwriter.writerow(row)
+    
+
+'''
 # Create the figure
 fig = plt.figure(figsize=(10,5))
 ax = plt.axes(projection=ccrs.PlateCarree())
 ax.set_global()
 ax.stock_img()
 c = 'b' # Set the plot color
+ 
 
 it1 = len(coords_sat1)
 for i in range(it1):
@@ -74,3 +97,4 @@ elevation_min = 20.0
 
    
 
+'''
