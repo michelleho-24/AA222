@@ -1,11 +1,9 @@
 from shapely.geometry import Polygon, MultiPolygon
 import matplotlib.pyplot as plt
-import cartopy.geodesic
 import numpy as np
 import math
 import shapely
 import cartopy.crs as ccrs
-import cartopy.geodesic
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 import csv

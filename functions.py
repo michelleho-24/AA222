@@ -170,9 +170,9 @@ def get_alt_mult_sats(height_incl, dt):
 
 def compute_earth_interior_angle(ele, alt):
     # elevation in degrees and altitude in meters 
-    R_EARTH = 6278*1e3 # radius of earth in meters
+    #R_EARTH = 6278*1e3 # radius of earth in meters
     ele = ele * math.pi / 180.0
-    rho = math.asin(R_EARTH/(R_EARTH + alt))
+    rho = math.asin(bh.R_EARTH/(bh.R_EARTH + (alt*1000)))
     eta = math.asin(math.cos(ele)*math.sin(rho))
     lam = math.pi/2.0 - eta - ele
     return lam #returns in radians 
@@ -218,9 +218,10 @@ def compute_area(coords, alt_sats, inclination):
 
     # While running through every time step
     constellation_coverage = []
-    for i in range(0,int(num_sat)):
+    for i in range(0,int(num_sat)-1):
         x = i*2
         satellite_coverage = [] # Initialize satellite coverage
+        print(lat_lon.size)
         lat = lat_lon[:,x] # extract latitude 
         n = x+1
         lon = lat_lon[:,n] # extract longitude 

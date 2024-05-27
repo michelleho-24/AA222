@@ -26,7 +26,7 @@ n = 6
 # An n-satellite constellation loses m satellites and must reconfigure
 
 # Initialize heights and altitudes for satellites 
-alt_sats = [550000 for _ in range(n)]
+alt_sats = [550 for _ in range(n)]
 # print(len(alt_sats))
 inclination = np.arange(0, 360, 360/n).tolist()
 sats_initial = []
@@ -41,9 +41,14 @@ original_coverage = MultiPolygon()
 coords = functions.calculate_lat_lon(sats_initial)
 original_area = functions.compute_area(coords, alt_sats=alt_sats, inclination = inclination) #finds the original area of the satellite 
 
-missing = 3 # the third satellite goes missing
+missing = 0 # the first satellite goes missing
 del alt_sats[missing]
 del inclination[missing]
+
+
+# print(alt_sats)
+
+
 input_vec = []
 input_vec.extend(alt_sats) 
 input_vec.extend(inclination)
@@ -67,14 +72,15 @@ def find_difference(input_vec):
     #     
     area_overlap = area_overlap.union(constellation)
     # for x in original_area: 
-    area_overlap = area_overlap.union(original_area)
+    area_overlap = area_overlap.intersection(original_area)
     
     return area_overlap
 
 
 
 area = find_difference(input_vec)
-functions.plot_coverage(area, "test_coverage.png")
-functions.plot_coverage(original_area, "original_coverage.png")
+# print(area)
+# functions.plot_coverage(area, "test_coverage.png")
+# functions.plot_coverage(original_area, "original_coverage.png")
 print(original_area.area)
 print(area.area)
