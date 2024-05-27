@@ -32,11 +32,11 @@ def compute_earth_interior_angle(ele, alt):
     lam = math.pi/2.0 - eta - ele
     return lam #returns in radians 
 
-ele = 0.0
+ele = 10.0
 
 def calculate_coverage_area(lat, lon, alt,ele): 
     angle = compute_earth_interior_angle(ele,alt)
-    radius = math.tan(angle)
+    radius = angle*R_EARTH
     coverage_area = Point(lon, lat).buffer(radius)
     return coverage_area
 
