@@ -22,7 +22,7 @@ import csv
 from matplotlib.patches import Circle
 from shapely.geometry import Point
 
-from scipy.optimize import minimize 
+from scipy.optimize import minimize, Bounds 
 
 n = 6
 # An n-satellite constellation loses m satellites and must reconfigure
@@ -47,18 +47,6 @@ missing = 0 # the first satellite goes missing
 del alt_sats[missing]
 del inclination[missing]
 
-del alt_sats[missing]
-del inclination[missing]
-
-del alt_sats[missing]
-del inclination[missing]
-
-del alt_sats[missing]
-del inclination[missing]
-
-del alt_sats[missing]
-del inclination[missing]
-
 # print(alt_sats)
 
 
@@ -70,10 +58,6 @@ input_vec.extend(inclination)
 
 # OPTIMIZE find_difference(new_coords) 
 # Find the difference between the original area and the new area
-
-
-
-
 
 # optimize the area_coverage objective function 
 def find_difference(input_vec):
@@ -87,19 +71,28 @@ def find_difference(input_vec):
     area_overlap = area_overlap.union(constellation)
     # for x in original_area: 
     area_overlap = area_overlap.intersection(original_area)
+
+    functions.write_polygon(area_overlap, "area_overlap.csv")
     
     return -area_overlap.area
 
 x0 = input_vec
-constraints = [
-    {'type': 'ineq', 'fun': lambda x:  x[n-1:]},  # x[n-1:] represents inclination
-    {'type': 'ineq', 'fun': lambda x:  180 - x[n-1:]}  # These two form the bounds for inclination
-]
-constraints += [{'type': 'ineq', 'fun': lambda x, i=i: x[i] - 500} for i in range(n-1)]
-constraints += [{'type': 'ineq', 'fun': lambda x, i=i: 650 - x[i]} for i in range(n-1)]
-for method in ['L-BFGS-B']: # 'COBYLA', 'SLSQP'
+
+# Define lower and upper bounds for alt_sats and inclination
+# lower_bounds = [500]*(n-1) + [0]*(len(input_vec)-(n-1))
+# upper_bounds = [650]*(n-1) + [180]*(len(input_vec)-(n-1))
+
+lower_bounds = [500]*(n-1) + [-np.inf]*(len(x0)-(n-1))
+upper_bounds = [650]*(n-1) + [np.inf]*(len(x0)-(n-1))
+
+
+# # Create bounds object
+bounds = Bounds(lower_bounds, upper_bounds)
+
+# for method in ['SLSQP']: # 'COBYLA', 'SLSQP'
+for method in ['L-BFGS-B']: 
     for i in range(10):
-        res = minimize(find_difference, x0, constraints=constraints, method=method,
+        res = minimize(find_difference, x0, bounds=bounds, method=method,
                 options={'xatol': 1e-8, 'disp': True})
         if res.success:
             print(method, res.x)
@@ -107,7 +100,27 @@ for method in ['L-BFGS-B']: # 'COBYLA', 'SLSQP'
 
 
 
-area = find_difference(input_vec)
+
+
+# optimize the area_coverage objective function 
+def find_difference_2(input_vec):
+    coords = functions.calculate_lat_lon(input_vec)
+    alt_sats = input_vec[:n-1]
+    inclination = input_vec[n-1:]
+    constellation = functions.compute_area(coords, alt_sats, inclination)
+    area_overlap = Polygon()
+    # for sat in constellation: 
+    #     
+    area_overlap = area_overlap.union(constellation)
+    # for x in original_area: 
+    area_overlap = area_overlap.intersection(original_area)
+
+    functions.write_polygon(area_overlap, "area_overlap.geojson")
+    functions.write_polygon(original_area, "original.geojson")
+
+area = find_difference_2(res.x)
+
+
 # # print(area)
 # # functions.plot_coverage(area, "test_coverage.png")
 # # functions.plot_coverage(original_area, "original_coverage.png")
