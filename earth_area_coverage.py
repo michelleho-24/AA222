@@ -66,7 +66,7 @@ for i in range(0,int(num_sat)-1):
     lon = lat_lon[:,n] # extract longitude 
     alt = heights[i] # extract height
     for t in range(0,num_points): # iterate through all of the data points 
-        coverage = calculate_coverage_area(lat[t], lon[t],alt)
+        coverage = calculate_coverage_area(lat[t], lon[t],alt, ele)
         satellite_coverage.append(coverage)
 
     satellite_overall = Polygon()
@@ -84,8 +84,8 @@ def plot_coverage(coverage, filename):
     fig, ax = plt.subplots(figsize=(10,8))
     ax = fig.add_subplot(1,1,1,projection=ccrs.PlateCarree())
     ax.stock_img()
-    for polygon in coverage.geoms: 
-        ax.plot(*polygon.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
+    # for polygon in coverage.geoms: 
+    ax.plot(*coverage.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
     ax.set_global()
     ax.coastlines()
     ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())

@@ -179,7 +179,7 @@ def compute_earth_interior_angle(ele, alt):
 
 def calculate_coverage_area(lat, lon, alt, ele): 
     angle = compute_earth_interior_angle(ele,alt)
-    radius = angle*R_EARTH
+    radius = angle*bh.R_EARTH
     coverage_area = Point(lon, lat).buffer(radius)
     return coverage_area
 
@@ -187,8 +187,8 @@ def plot_coverage(coverage, filename):
         fig, ax = plt.subplots(figsize=(10,8))
         ax = fig.add_subplot(1,1,1,projection=ccrs.PlateCarree())
         ax.stock_img()
-        for polygon in coverage.geoms: 
-            ax.plot(*polygon.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
+        # for polygon in coverage.geoms: 
+        ax.plot(*coverage.exterior.xy, color = 'red', transform=ccrs.PlateCarree())
         ax.set_global()
         ax.coastlines()
         ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
@@ -200,27 +200,33 @@ def plot_coverage(coverage, filename):
         plt.savefig(filename, bbox_inches = 'tight', pad_inches = 0.1)
         plt.close()
 
-def compute_area(coords):
+def compute_area(coords, alt_sats, inclination):
+    alt = np.copy(alt_sats)
     # input is an array 
     lat_lon = np.array(coords)
+    # print((lat_lon).size)
     rows, columns = lat_lon.shape
-    num_points  = rows
-    num_sat = columns/2
+    num_points = rows
+    # num_sat = columns/2
+    num_sat = len(alt_sats)
+    # print(coords)
+    # print(num_sat)
+    # print(num_points)
     ele = 10.0
 
     constellation_coverage = MultiPolygon()
 
     # While running through every time step
     constellation_coverage = []
-    for i in range(0,int(num_sat)-1):
+    for i in range(0,int(num_sat)):
         x = i*2
         satellite_coverage = [] # Initialize satellite coverage
         lat = lat_lon[:,x] # extract latitude 
         n = x+1
         lon = lat_lon[:,n] # extract longitude 
-        alt = alt[i] # extract height
+        altitude = alt[i] # extract height
         for t in range(0,num_points): # iterate through all of the data points 
-            coverage = calculate_coverage_area(lat[t], lon[t],alt,ele)
+            coverage = calculate_coverage_area(lat[t], lon[t],altitude,ele)
             satellite_coverage.append(coverage)
 
         satellite_overall = Polygon()
@@ -236,7 +242,7 @@ def compute_area(coords):
     return constellation
 
 def calculate_lat_lon(sats_initial):
-        coords_initial = get_coords_mult_sats(sats_initial, 0) # find intial coordinates of each satellite 
+        coords_initial = get_coords_mult_sats(sats_initial, 0) # find initial coordinates of each satellite 
         alt_initial = get_alt_mult_sats(sats_initial, 0)       # find initial altitude of each satellite 
         num_sats = int(len(sats_initial) / 2) # define number of satellites in problem 
         coord_info = {}                       # define emtpy dictionary to carry through coordinate information 
