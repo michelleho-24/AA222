@@ -11,11 +11,16 @@ from matplotlib.patches import Circle
 from shapely.geometry import Point
 import json
 from shapely.geometry import shape
+import shapely.geometry as sgeom
+from shapely.ops import unary_union
+
 # import functions 
 #import brahe as bh
-import cartopy
+import cartopy.geodesic
 from shapely.geometry import Polygon, MultiPolygon
-import pyproj
+import warnings
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
 
 def read_csv_file(file_path):
     lat_lon = []
@@ -160,8 +165,8 @@ def plot_eddy(sat_coords):
     lon_array, lat_array, _ = geod.fwd(lon, lat, azimuths, [radius_meters] * n_samples)
     return lon_array, lat_array
 '''
-def plot_eddy_lat_lon(lat_lon, filename):
-    alt = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508]
+def plot_eddy_lat_lon(lat_lon, type, filename, c, b):
+    alt = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508, 600, 600,600]
     elevation_min = 10.0
     # Create the figure
     fig = plt.figure(figsize=(10,5))
@@ -170,31 +175,68 @@ def plot_eddy_lat_lon(lat_lon, filename):
     ax.stock_img()
     rows, columns = lat_lon.shape
     R_EARTH = 6378*1e3
-    for i in range(int(columns)//2):
+
+    all_geoms = []
+    for i in range(0,int(columns)//2-1):
         a = alt[i]
         lam = compute_earth_interior_angle(elevation_min, a)
 
         for j in range(rows):
-            longitude = lat_lon[j,i+1]
-            longitude = longitude.astype(float)
-            print(longitude.dtype)
-            latitude = lat_lon[j, i]
-            latitude = latitude.astype(float)
-            print(latitude.dtype)
-            ax.plot(longitude, latitude, marker='o', markersize=3, transform=ccrs.Geodetic())
+            index = 2*i
+            longitude = float(lat_lon[j,index])
+            latitude = float(lat_lon[j, index+1])
+            ax.plot(longitude, latitude, color = b, marker='o', markersize=3, transform=ccrs.Geodetic())
             # Get a bunch of points in a circle space at the the right angle offset from the sub-satellite point to draw the view cone
-            #circle_lon, circle_lat = generate_circle_points(longitude, latitude, lam*R_EARTH, 100)
-            circle_points = cartopy.geodesic.Geodesic().circle(lon=longitude, lat=latitude, radius=lam*R_EARTH, n_samples=100, endpoint=False)
-            #circle_points = zip(circle_lon, circle_lat)
+            # circle_points = cartopy.geodesic.Geodesic().circle(lon=longitude, lat=latitude, radius=lam*R_EARTH, n_samples=100, endpoint=False)
+            radius = lam*R_EARTH
+            circle_points = cartopy.geodesic.Geodesic().circle(longitude, latitude, radius, 100, endpoint=False)
+            # circle_points = circle_points.tolist()
+            circle_points = circle_points.tolist()
+            circle_points.append(circle_points[0])
+            #all_circle_points.append(circle_points)
             geom = shapely.geometry.Polygon(circle_points)
-            ax.add_geometries([geom], crs=ccrs.Geodetic(), alpha=0.5, edgecolor='none', linewidth=0)
+            '''
+            if geom.is_valid:
+                all_geoms.append(geom)
+            else: 
+                geom = geom.buffer(0)
+                if geom.is_valid:
+                    all_geoms.append(geom)'''
+            ax.add_geometries([geom], crs=ccrs.Geodetic(), color = c, alpha=0.05, edgecolor='none', linewidth=0)
+    
+    #buffered_geoms = [geom.buffer(0) for geom in all_geoms]
+    #combined_geom = unary_union(all_geoms)
+    #globe_poly = shapely.geometry.Polygon([(-180,-90), (180,-90),(180, 90),(-180,90),(-180,-90)])
+    #buffered_geom = combined_geom.buffer(0)
+    #inner_area = globe_poly.difference(combined_geom)
+    #ax.add_geometries([inner_area], crs = ccrs.Geodetic(),color=c, alpha = 0.5, edgecolor = 'none', linewidth = 0)
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
+    ax.set_title("Ground Coverage")
+    plt.savefig(filename, dpi = 1000)
+    '''combined_circle_points = np.concatenate(all_circle_points)
+    combined_circle_geom = sgeom.MultiPoint(combined_circle_points).convex_hull
+    path = Path(combined_circle_geom.exterior.coords)
+    patch = PathPatch(path, facecolor=c, edgecolor = 'none', alpha = 0.5)
+    ax.add_patch(patch)'''
+    # plt.savefig(filename)
+    
 
-    plt.savefig(filename)
+APPLIED_FILTER_WARNINGS = False
+
+def filter_cartopy_warnings():
+    global APPLIED_FILTER_WARNINGS
+
+    if not APPLIED_FILTER_WARNINGS:
+        warnings.filterwarnings("ignore", message="Approximating coordinate system")
+        APPLIED_FILTER_WARNINGS = True
+
+filter_cartopy_warnings()
 
 file_path = 'coords_random.csv'
 lat_lon_ar = read_csv_file(file_path)
 lat_lon = np.array(lat_lon_ar)
 
-plot_eddy_lat_lon(lat_lon, "plot.png")
+plot_eddy_lat_lon(lat_lon, 'Random Policy',"plot.png", 'b', 'r')
 
-#plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0])
+#plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0]
