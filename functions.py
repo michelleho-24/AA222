@@ -217,9 +217,9 @@ def compute_area(coords, alt_sats, inclination):
         x = i*2
         satellite_coverage = [] # Initialize satellite coverage
         # print(lat_lon.size)
-        lat = lat_lon[:,x] # extract latitude 
+        lon = lat_lon[:,x] # extract latitude 
         n = x+1
-        lon = lat_lon[:,n] # extract longitude 
+        lat = lat_lon[:,n] # extract longitude 
         altitude = alt[i] # extract height
         for t in range(0,num_points): # iterate through all of the data points 
             coverage = calculate_coverage_area(lat[t], lon[t],altitude,ele)
