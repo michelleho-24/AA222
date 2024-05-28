@@ -1,4 +1,4 @@
-from shapely.geometry import Polygon, MultiPolygon
+# from shapely.geometry import Polygon, MultiPolygon
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -11,6 +11,8 @@ from matplotlib.patches import Circle
 from shapely.geometry import Point
 import json
 from shapely.geometry import shape
+import functions 
+import brahe as bh
 
 def read_csv_file(file_path):
     lat_lon = []
@@ -117,6 +119,39 @@ def plot_coverage(coverage, filename):
 
 plot_coverage(const, "test_coverage.png")
 
+def plot_eddy(sat_coords):
+    # og_coords = [550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0]
+    # LGBFS_coords = [553.69411486,550,548.15294257,553.69411486,550,30,60,90,120,150]
+    # PSO_coords = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508,60.53297263 ,25.3114063 ,120.00667778 ,26.98097552 ,91.31959186]
+    # random_coords = [633, 508, 584, 640, 566, 179, 77, 110, 93, 8]
+
+    elevation_min = 10.0
+    # Create the figure
+    fig = plt.figure(figsize=(10,5))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.set_global()
+    ax.stock_img()
+    c = 'b' # Set the plot color
+    # plot the optimized sats 
+    for i in range(len(sat_coords)/2):
+        lam = compute_earth_interior_angle(ele=elevation_min, alt=sat_coords[i])
+
+        # Get the satellite position from above
+        x_ecef = functions.tle.state_ecef(t) # Get the ECEF state one day later
+        x_geod = bh.sECEFtoGEOD(x_ecef[0:3], use_degrees=True) # Need the array slice to get only the position
+        lon, lat = x_geod[0], x_geod[1]
+
+        # Plot Groundstation Location
+        ax.plot(lon, lat, color=c, marker='o', markersize=3, transform=ccrs.Geodetic())
+
+        # Get a bunch of points in a circle space at the the right angle offset from the sub-satellite point to draw the view cone
+        circle_points = cartopy.geodesic.Geodesic().circle(lon=lon, lat=lat, radius=lam*bh.R_EARTH, n_samples=100, endpoint=False)
+        geom = shapely.geometry.Polygon(circle_points)
+        ax.add_geometries((geom,), crs=ccrs.Geodetic(), facecolor=c, alpha=0.5, edgecolor='none', linewidth=0)
+
+        plt.show()
+
+plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0])
 # could calculate the original surface area coverage 
 # and then do a union of that with the new area coverage 
 # and that would give the best matching to the previous area coverage
