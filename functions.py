@@ -171,7 +171,6 @@ def get_alt_mult_sats(height_incl, dt):
 
 def compute_earth_interior_angle(ele, alt):
     # elevation in degrees and altitude in meters 
-    #R_EARTH = 6278*1e3 # radius of earth in meters
     ele = ele * math.pi / 180.0
     # rho = math.asin(bh.R_EARTH/(bh.R_EARTH + (alt*1000)))
     # Calculate the argument for math.asin
@@ -210,7 +209,7 @@ def compute_area(coords, alt_sats, inclination):
     # print(num_points)
     ele = 10.0
 
-    constellation_coverage = MultiPolygon()
+    # constellation_coverage = MultiPolygon()
 
     # While running through every time step
     constellation_coverage = []
