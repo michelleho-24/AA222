@@ -11,10 +11,11 @@ from matplotlib.patches import Circle
 from shapely.geometry import Point
 import json
 from shapely.geometry import shape
-import functions 
+# import functions 
 #import brahe as bh
 import cartopy
 from shapely.geometry import Polygon, MultiPolygon
+import pyproj
 
 def read_csv_file(file_path):
     lat_lon = []
@@ -100,7 +101,7 @@ def read_polygon(filename):
 # area_covered = constellation.area
 # write_polygon(constellation, "test.geojson")
 
-const = read_polygon("test.geojson")
+# const = read_polygon("test.geojson")
 
 def plot_coverage(coverage, filename): 
     fig, ax = plt.subplots(figsize=(10,8))
@@ -119,7 +120,7 @@ def plot_coverage(coverage, filename):
     plt.savefig(filename, bbox_inches = 'tight', pad_inches = 0.1)
     plt.close()
 
-plot_coverage(const, "test_coverage.png")
+#plot_coverage(const, "test_coverage.png")
 
 def plot_eddy(sat_coords):
     # og_coords = [550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0]
@@ -153,6 +154,12 @@ def plot_eddy(sat_coords):
 
         plt.show()
 
+'''def generate_circle_points(lon, lat, radius_meters, n_samples): 
+    geod = pyproj.Geod(ellps='WGS84')  # Define a geodesic with WGS84 ellipsoid
+    azimuths = [360 * i / n_samples for i in range(n_samples)]  # Generate azimuths
+    lon_array, lat_array, _ = geod.fwd(lon, lat, azimuths, [radius_meters] * n_samples)
+    return lon_array, lat_array
+'''
 def plot_eddy_lat_lon(lat_lon, filename):
     alt = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508]
     elevation_min = 10.0
@@ -161,24 +168,32 @@ def plot_eddy_lat_lon(lat_lon, filename):
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.set_global()
     ax.stock_img()
-    c = 'b' # Set the plot color
     rows, columns = lat_lon.shape
     R_EARTH = 6378*1e3
-    for i in range(columns/2):
+    for i in range(int(columns)//2):
         a = alt[i]
         lam = compute_earth_interior_angle(elevation_min, a)
 
         for j in range(rows):
-            lon = lat_lon[j,i+1]
-            lat = lat_lon[j, i]
-            ax.plot(lon, lat, color=c, marker='o', markersize=3, transform=ccrs.Geodetic())
-             # Get a bunch of points in a circle space at the the right angle offset from the sub-satellite point to draw the view cone
-            circle_points = cartopy.geodesic.Geodesic().circle(lon=lon, lat=lat, radius=lam*R_EARTH, n_samples=100, endpoint=False)
+            longitude = lat_lon[j,i+1]
+            longitude = longitude.astype(float)
+            print(longitude.dtype)
+            latitude = lat_lon[j, i]
+            latitude = latitude.astype(float)
+            print(latitude.dtype)
+            ax.plot(longitude, latitude, marker='o', markersize=3, transform=ccrs.Geodetic())
+            # Get a bunch of points in a circle space at the the right angle offset from the sub-satellite point to draw the view cone
+            #circle_lon, circle_lat = generate_circle_points(longitude, latitude, lam*R_EARTH, 100)
+            circle_points = cartopy.geodesic.Geodesic().circle(lon=longitude, lat=latitude, radius=lam*R_EARTH, n_samples=100, endpoint=False)
+            #circle_points = zip(circle_lon, circle_lat)
             geom = shapely.geometry.Polygon(circle_points)
-            ax.add_geometries((geom,), crs=ccrs.Geodetic(), facecolor=c, alpha=0.5, edgecolor='none', linewidth=0)
+            ax.add_geometries([geom], crs=ccrs.Geodetic(), alpha=0.5, edgecolor='none', linewidth=0)
 
     plt.savefig(filename)
 
+file_path = 'coords_random.csv'
+lat_lon_ar = read_csv_file(file_path)
+lat_lon = np.array(lat_lon_ar)
 
 plot_eddy_lat_lon(lat_lon, "plot.png")
 
