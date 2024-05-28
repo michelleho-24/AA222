@@ -42,6 +42,9 @@ def optimize(num_sats, deleted):
     # print("Original Satellites: ", sats_initial)
     # print("Original Coordinates", coords)
     # functions.write_polygon(original_constellation, "original_constellation")
+    with open('original_coords.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(coords)
 
     # lose a satellite 
     alt_sats_remaining = [alt_sats_orig[i] for i in range(len(alt_sats_orig)) if i not in deleted]
@@ -55,7 +58,7 @@ def optimize(num_sats, deleted):
     remaining_constellation = functions.compute_area(coords_remaining, alt_sats=alt_sats_remaining, inclination = inclination_remaining)
 
     # print("Remaining Area: ", remaining_constellation.area)
-    # print("Percent Difference: ", 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area)
+    print("Percent Difference: ", 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area)
     remaining_percentdiff = 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area
     # optimize the area_coverage objective function 
     def obj_func(input_vec):
@@ -96,10 +99,14 @@ def optimize(num_sats, deleted):
     inclination_lbfgs = lbfgs_sats.x[n-1:]
     lbfgs_constellation = functions.compute_area(coords_lbfgs, alt_sats=alt_sats_lbfgs, inclination = inclination_lbfgs) 
 
+    with open('lbfgs_coordinates.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(coords_lbfgs)
+
     # print("LBFGS-B Satellites", lbfgs_sats.x)
     # print("LBFGS Area: ", lbfgs_constellation.area)
-    # print("Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
-    # # print("LBFGS-B Coordinates", coords_lbfgs)
+    print("Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
+    # print("LBFGS-B Coordinates", coords_lbfgs)
     # functions.write_polygon(lbfgs_constellation, "lbfgs_constellation")
 
     lbfgs_percentdiff = 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area
@@ -127,9 +134,13 @@ def optimize(num_sats, deleted):
     pso_percentdiff = 100*(original_constellation.area - pso_constellation.area)/original_constellation.area
     # print("PSO Satellites: ", pso_sats)
     # print("PSO Area: ", pso_constellation.area)
-    # print("Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
-    # # print("PSO Coordinates", coords_pso)
+    print("Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
+    # print("PSO Coordinates", coords_pso)
     # functions.write_polygon(pso_constellation, "pso_constellation")
+
+    with open('pso_coordinates.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(coords_pso)
 
     random_sats = []
     for i in range(n-1):
@@ -145,30 +156,26 @@ def optimize(num_sats, deleted):
     random_percentdiff = 100*(original_constellation.area - random_constellation.area)/original_constellation.area
     # print("Random Satellites: ", random_sats)
     # print("Random Area: ", random_constellation.area)
-    # print("Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
-    # # print("Random Coordinates", coords_random)
+    print("Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
+    # print("Random Coordinates", coords_random)
     # functions.write_polygon(random_constellation, "random_constellation")
+    with open('random_coordinates.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(coords_random)
 
-    return remaining_percentdiff, lbfgs_percentdiff, pso_percentdiff, random_percentdiff
+    with open('all_sats.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Original'] + list(sats_initial))
+        writer.writerow(['LBFGS-B'] + list(lbfgs_sats.x))
+        writer.writerow(['PSO'] + list(pso_sats))
+        writer.writerow(['Random'] + list(random_sats))
+
+    
     
 
 # number of original satellites
 n = 20
 # lose this many satellites
 missing = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
-remaining_percentdiff = []
-lbfgs_percentdiff = []
-pso_percentdiff = []
-random_percentdiff = []
 
-for i in range(1, 31):
-    r_percentdiff, l_percentdiff, p_percentdiff, rand_percentdiff = optimize(n, missing)
-    remaining_percentdiff.append(r_percentdiff)
-    lbfgs_percentdiff.append(l_percentdiff)
-    pso_percentdiff.append(p_percentdiff)
-    random_percentdiff.append(rand_percentdiff)
-
-print("Average Percent Difference No Optimization",sum(remaining_percentdiff)/len(remaining_percentdiff))
-print("Average Percent Difference LBFGS-B",sum(lbfgs_percentdiff)/len(lbfgs_percentdiff))
-print("Average Percent Difference PSO",sum(pso_percentdiff)/len(pso_percentdiff))
-print("Average Percent Difference Random",sum(random_percentdiff)/len(random_percentdiff))
+optimize(n, missing)
