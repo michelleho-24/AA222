@@ -42,6 +42,7 @@ original_constellation = functions.compute_area(coords, alt_sats=alt_sats_orig, 
 
 print("Original Area: ", original_constellation.area)
 print("Original Satellites: ", sats_initial)
+print("Original Coordinates", coords)
 functions.write_polygon(original_constellation, "original_constellation")
 
 # lose a satellite 
@@ -91,7 +92,6 @@ for method in ['L-BFGS-B']:
         if lbfgs_sats.success:
             break
 
-print("Satellites LBFGS: ", lbfgs_sats.x)
 coords_lbfgs = functions.calculate_lat_lon(lbfgs_sats.x)
 alt_sats_lbfgs = lbfgs_sats.x[:n-1]
 inclination_lbfgs = lbfgs_sats.x[n-1:]
@@ -100,6 +100,7 @@ lbfgs_constellation = functions.compute_area(coords_lbfgs, alt_sats=alt_sats_lbf
 print("LBFGS-B Satellites", lbfgs_sats.x)
 print("LBFGS Area: ", lbfgs_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
+print("LBFGS-B Coordinates", coords_lbfgs)
 functions.write_polygon(lbfgs_constellation, "lbfgs_constellation")
 
 # particle swarm optimization
@@ -125,6 +126,7 @@ pso_constellation = functions.compute_area(coords_pso, alt_sats=alt_sats_pso, in
 
 print("PSO Area: ", pso_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
+print("PSO Coordinates", coords_pso)
 functions.write_polygon(pso_constellation, "pso_constellation")
 
 random_sats = []
@@ -141,4 +143,5 @@ random_constellation = functions.compute_area(coords_random, alt_sats=alt_sats_r
 print("Random Satellites: ", random_sats)
 print("Random Area: ", random_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
+print("Random Coordinates", coords_random)
 functions.write_polygon(random_constellation, "random_constellation")
