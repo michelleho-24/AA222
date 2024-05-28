@@ -3,6 +3,7 @@ import warnings
 import math
 import numpy as np
 import csv
+import random
 
 # Plotting Imports
 import shapely
@@ -29,7 +30,7 @@ n = 6
 # An n-satellite constellation loses m satellites and must reconfigure
 
 # Initialize heights and altitudes for satellites 
-alt_sats = [550 for _ in range(n)]
+alt_sats = [500 for _ in range(n)]
 # print(len(alt_sats))
 inclination = np.arange(0, 180, 180/n).tolist()
 sats_initial = []
@@ -71,8 +72,6 @@ def find_difference(input_vec):
     area_overlap = area_overlap.union(constellation)
     # for x in original_area: 
     area_overlap = area_overlap.intersection(original_area)
-
-    functions.write_polygon(area_overlap, "area_overlap.csv")
     
     return -area_overlap.area
 
@@ -115,7 +114,7 @@ optimal_function_value = find_difference(pos)
 print(optimal_function_value)
 
 # optimize the area_coverage objective function 
-def find_difference_2(input_vec):
+def find_difference_2(input_vec, name):
     coords = functions.calculate_lat_lon(input_vec)
     alt_sats = input_vec[:n-1]
     inclination = input_vec[n-1:]
@@ -127,11 +126,29 @@ def find_difference_2(input_vec):
     # for x in original_area: 
     area_overlap = area_overlap.intersection(original_area)
 
-    functions.write_polygon(area_overlap, "area_swarm.geojson")
-    functions.write_polygon(original_area, "original.geojson")
+    functions.write_polygon(area_overlap, name + ".geojson")
 
-area = find_difference_2(pos)
+find_difference_2(pos, "particle_swarm")
+find_difference_2(res.x, "LBFGS-B")
+functions.write_polygon(original_area, "original.geojson")
 
+# random policy 
+# Initialize heights and altitudes for satellites 
+random_sats = []
+
+for i in range(n-1):
+    random_sats.append(random.randint(500, 650))
+for i in range(n-1):
+    random_sats.append(random.randint(0, 180))
+
+print(random_sats)
+find_difference_2(random_sats, "random")
+
+print("Original Area Coverage: ", -find_difference(sats_initial))
+print("Lost Area Coverage: ", -find_difference(input_vec))
+print("Particle Swarm Area Coverage: ", -find_difference(pos))
+print("LBFGS-B Area Coverage: ", -find_difference(res.x))
+print("Random Area Coverage: ", -find_difference(random_sats))
 
 # print(area)
 # functions.plot_coverage(area, "test_coverage.png")
