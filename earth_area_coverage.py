@@ -45,7 +45,7 @@ def calculate_coverage_area(lat, lon, alt,ele):
     return coverage_area
 
 # Input latitude and longitude matrix (dummy for now)
-file_path = 'satellite_coordinates.csv'
+'''file_path = 'satellite_coordinates.csv'
 lat_lon_ar = read_csv_file(file_path)
 lat_lon = np.array(lat_lon_ar)
 #lat_lon = np.array([[1,2,3,4], [5,6,7,8],[9,10,11,12], [13, 14, 15, 16]])
@@ -79,7 +79,7 @@ for i in range(0,int(num_sat)-1):
 
 constellation = Polygon()
 for sat in constellation_coverage: 
-    constellation = constellation.union(sat)
+    constellation = constellation.union(sat)'''
 
 def write_polygon(polygon, filename):
     geojson ={
@@ -98,7 +98,7 @@ def read_polygon(filename):
     return polygon
 
 # area_covered = constellation.area
-write_polygon(constellation, "test.geojson")
+# write_polygon(constellation, "test.geojson")
 
 const = read_polygon("test.geojson")
 
@@ -153,7 +153,7 @@ def plot_eddy(sat_coords):
 
         plt.show()
 
-def plot_eddy_lat_lon(lat_lon):
+def plot_eddy_lat_lon(lat_lon, filename):
     alt = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508]
     elevation_min = 10.0
     # Create the figure
@@ -177,7 +177,9 @@ def plot_eddy_lat_lon(lat_lon):
             geom = shapely.geometry.Polygon(circle_points)
             ax.add_geometries((geom,), crs=ccrs.Geodetic(), facecolor=c, alpha=0.5, edgecolor='none', linewidth=0)
 
-    plt.savefig("plot.png")
+    plt.savefig(filename)
 
+
+plot_eddy_lat_lon(lat_lon, "plot.png")
 
 #plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0])
