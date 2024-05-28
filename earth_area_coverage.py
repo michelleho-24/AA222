@@ -12,7 +12,9 @@ from shapely.geometry import Point
 import json
 from shapely.geometry import shape
 import functions 
-import brahe as bh
+#import brahe as bh
+import cartopy
+from shapely.geometry import Polygon, MultiPolygon
 
 def read_csv_file(file_path):
     lat_lon = []
@@ -151,9 +153,31 @@ def plot_eddy(sat_coords):
 
         plt.show()
 
-plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0])
-# could calculate the original surface area coverage 
-# and then do a union of that with the new area coverage 
-# and that would give the best matching to the previous area coverage
-# better way to return to the original area coverage because you can 
-# enforce area coverage of the perious constellation 
+def plot_eddy_lat_lon(lat_lon):
+    alt = [605.33456691,624.50644854,593.98916237,591.4515896 ,625.9709508]
+    elevation_min = 10.0
+    # Create the figure
+    fig = plt.figure(figsize=(10,5))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.set_global()
+    ax.stock_img()
+    c = 'b' # Set the plot color
+    rows, columns = lat_lon.shape
+    R_EARTH = 6378*1e3
+    for i in range(columns/2):
+        a = alt[i]
+        lam = compute_earth_interior_angle(elevation_min, a)
+
+        for j in range(rows):
+            lon = lat_lon[j,i+1]
+            lat = lat_lon[j, i]
+            ax.plot(lon, lat, color=c, marker='o', markersize=3, transform=ccrs.Geodetic())
+             # Get a bunch of points in a circle space at the the right angle offset from the sub-satellite point to draw the view cone
+            circle_points = cartopy.geodesic.Geodesic().circle(lon=lon, lat=lat, radius=lam*R_EARTH, n_samples=100, endpoint=False)
+            geom = shapely.geometry.Polygon(circle_points)
+            ax.add_geometries((geom,), crs=ccrs.Geodetic(), facecolor=c, alpha=0.5, edgecolor='none', linewidth=0)
+
+    plt.savefig("plot.png")
+
+
+#plot_eddy([550, 550, 550, 550, 550, 550, 0.0, 30.0, 60.0, 90.0, 120.0, 150.0])
