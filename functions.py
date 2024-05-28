@@ -200,6 +200,7 @@ def compute_area(coords, alt_sats, inclination):
     # input is an array 
     lat_lon = np.array(coords)
     # print((lat_lon).size)
+    # print(lat_lon.shape)
     rows, columns = lat_lon.shape
     num_points = rows
     # num_sat = columns/2
@@ -265,7 +266,7 @@ def calculate_lat_lon(sats_initial):
                 coords_row.extend(coords_current[i])            # "flatten" lat/long for each satellite into the same row  
             
             coords.append(coords_row)  
-            return coords
+        return coords
 
 def plot_coverage(coverage, filename): 
         # coverage is a polygon 

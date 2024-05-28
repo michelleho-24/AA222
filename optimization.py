@@ -26,12 +26,16 @@ from shapely.geometry import Point
 from scipy.optimize import minimize, Bounds 
 import pyswarms as ps 
 
+with open('output.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Type","Area", "Original Satellites", "Original Coordinates"])
 
+# def optimize(num_sats, deleted)
 # number of original satellites
-n = 6 
+n = 20
 
 # Initialize heights and altitudes for satellites 
-alt_sats_orig = [550 for _ in range(n)]
+alt_sats_orig = [650 for _ in range(n)]
 inclination_orig = np.arange(0, 180, 180/n).tolist()
 sats_initial = []
 sats_initial.extend(alt_sats_orig)
@@ -42,13 +46,13 @@ original_constellation = functions.compute_area(coords, alt_sats=alt_sats_orig, 
 
 print("Original Area: ", original_constellation.area)
 print("Original Satellites: ", sats_initial)
-print("Original Coordinates", coords)
+# print("Original Coordinates", coords)
 functions.write_polygon(original_constellation, "original_constellation")
 
 # lose a satellite 
-missing = 0 # the first satellite goes missing
-alt_sats_remaining = [alt_sats_orig[i] for i in range(len(alt_sats_orig)) if i != missing]
-inclination_remaining = [inclination_orig[i] for i in range(len(inclination_orig)) if i != missing]
+missing = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] # the first satellite goes missing
+alt_sats_remaining = [alt_sats_orig[i] for i in range(len(alt_sats_orig)) if i not in missing]
+inclination_remaining = [inclination_orig[i] for i in range(len(inclination_orig)) if i not in missing]
 
 sats_remaining = []
 sats_remaining.extend(alt_sats_remaining) 
@@ -78,6 +82,8 @@ def obj_func(input_vec):
 # initial guess 
 x0 = sats_remaining
 
+
+n = n - len(missing)
 # Define lower and upper bounds for alt_sats and inclination
 lower_bounds = [500]*(n-1) + [0]*(len(x0)-(n-1))
 upper_bounds = [650]*(n-1) + [180]*(len(x0)-(n-1))
@@ -100,7 +106,7 @@ lbfgs_constellation = functions.compute_area(coords_lbfgs, alt_sats=alt_sats_lbf
 print("LBFGS-B Satellites", lbfgs_sats.x)
 print("LBFGS Area: ", lbfgs_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
-print("LBFGS-B Coordinates", coords_lbfgs)
+# print("LBFGS-B Coordinates", coords_lbfgs)
 functions.write_polygon(lbfgs_constellation, "lbfgs_constellation")
 
 # particle swarm optimization
@@ -126,7 +132,7 @@ pso_constellation = functions.compute_area(coords_pso, alt_sats=alt_sats_pso, in
 
 print("PSO Area: ", pso_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
-print("PSO Coordinates", coords_pso)
+# print("PSO Coordinates", coords_pso)
 functions.write_polygon(pso_constellation, "pso_constellation")
 
 random_sats = []
@@ -143,5 +149,10 @@ random_constellation = functions.compute_area(coords_random, alt_sats=alt_sats_r
 print("Random Satellites: ", random_sats)
 print("Random Area: ", random_constellation.area)
 print("Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
-print("Random Coordinates", coords_random)
+# print("Random Coordinates", coords_random)
 functions.write_polygon(random_constellation, "random_constellation")
+
+
+with open('coords_random.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerows(coords_random)
