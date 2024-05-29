@@ -1,1 +1,7 @@
 222proj_venv/
+csvs/
+Data/
+Images/
+plots/
+old_files/
+report.log

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import brahe as bh
 import brahe.data_models as bdm
 import brahe.access.access as ba
-import functions
+import src.functions as functions
 
 from shapely.geometry import Polygon, MultiPolygon
 import cartopy.feature as cfeature
@@ -23,7 +23,7 @@ import csv
 from matplotlib.patches import Circle
 from shapely.geometry import Point
 
-from scipy.optimize import minimize, Bounds 
+from scipy.optimize import minimize, Bounds, differential_evolution 
 import pyswarms as ps 
 
 def optimize(num_sats, deleted): 
@@ -42,9 +42,6 @@ def optimize(num_sats, deleted):
     # print("Original Satellites: ", sats_initial)
     # print("Original Coordinates", coords)
     # functions.write_polygon(original_constellation, "original_constellation")
-    with open('original_coords.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerows(coords)
 
     # lose a satellite 
     alt_sats_remaining = [alt_sats_orig[i] for i in range(len(alt_sats_orig)) if i not in deleted]
@@ -58,7 +55,7 @@ def optimize(num_sats, deleted):
     remaining_constellation = functions.compute_area(coords_remaining, alt_sats=alt_sats_remaining, inclination = inclination_remaining)
 
     # print("Remaining Area: ", remaining_constellation.area)
-    print("Percent Difference: ", 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area)
+    # print("Percent Difference: ", 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area)
     remaining_percentdiff = 100*(original_constellation.area - remaining_constellation.area)/original_constellation.area
     # optimize the area_coverage objective function 
     def obj_func(input_vec):
@@ -78,38 +75,35 @@ def optimize(num_sats, deleted):
     # initial guess 
     x0 = sats_remaining
 
-
     n = n - len(deleted)
     # Define lower and upper bounds for alt_sats and inclination
-    lower_bounds = [500]*(n-1) + [0]*(len(x0)-(n-1))
-    upper_bounds = [650]*(n-1) + [180]*(len(x0)-(n-1))
+    lower_bounds = [500.0]*(n-1) + [1e-8]*(len(x0)-(n-1))
+    upper_bounds = [650.0]*(n-1) + [180.0]*(len(x0)-(n-1))
     bounds = Bounds(lower_bounds, upper_bounds)
 
-    # LBFGS-B
+    # Differential Evolution + LBFGS-B
 
-    for method in ['L-BFGS-B']: 
-        for i in range(10):
-            lbfgs_sats = minimize(obj_func, x0, bounds=bounds, method=method,
-                    options={'xatol': 1e-8, 'disp': True})
-            if lbfgs_sats.success:
-                break
+    # for method in ['L-BFGS-B']: 
+    # for i in range(5):
+    #     lbfgs_sats = differential_evolution(obj_func, bounds, tol=0.01, maxiter=100, disp = True)
+    #     # lbfgs_sats = minimize(obj_func, x0, bounds=bounds, method=method,
+    #     #         options={'xatol': 1e-8, 'disp': True})
+    #     if lbfgs_sats.success:
+    #         break
 
-    coords_lbfgs = functions.calculate_lat_lon(lbfgs_sats.x)
-    alt_sats_lbfgs = lbfgs_sats.x[:n-1]
-    inclination_lbfgs = lbfgs_sats.x[n-1:]
-    lbfgs_constellation = functions.compute_area(coords_lbfgs, alt_sats=alt_sats_lbfgs, inclination = inclination_lbfgs) 
+    # lbfgs_sats = differential_evolution(obj_func, bounds, tol=0.01, maxiter=100, disp = True)
 
-    with open('lbfgs_coordinates.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(coords_lbfgs)
+    # coords_lbfgs = functions.calculate_lat_lon(lbfgs_sats.x)
+    # alt_sats_lbfgs = lbfgs_sats.x[:n-1]
+    # inclination_lbfgs = lbfgs_sats.x[n-1:]
+    # lbfgs_constellation = functions.compute_area(coords_lbfgs, alt_sats=alt_sats_lbfgs, inclination = inclination_lbfgs) 
+    # lbfgs_percentdiff = 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area
 
     # print("LBFGS-B Satellites", lbfgs_sats.x)
     # print("LBFGS Area: ", lbfgs_constellation.area)
-    print("Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
-    # print("LBFGS-B Coordinates", coords_lbfgs)
+    # print("Diff Ev Percent Difference from Original: ", 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area)
+    # # print("LBFGS-B Coordinates", coords_lbfgs)
     # functions.write_polygon(lbfgs_constellation, "lbfgs_constellation")
-
-    lbfgs_percentdiff = 100*(original_constellation.area - lbfgs_constellation.area)/original_constellation.area
 
     # particle swarm optimization
     # Set up hyperparameters
@@ -134,13 +128,9 @@ def optimize(num_sats, deleted):
     pso_percentdiff = 100*(original_constellation.area - pso_constellation.area)/original_constellation.area
     # print("PSO Satellites: ", pso_sats)
     # print("PSO Area: ", pso_constellation.area)
-    print("Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
-    # print("PSO Coordinates", coords_pso)
+    print("PSO Percent Difference from Original: ", 100*(original_constellation.area - pso_constellation.area)/original_constellation.area)
+    # # print("PSO Coordinates", coords_pso)
     # functions.write_polygon(pso_constellation, "pso_constellation")
-
-    with open('pso_coordinates.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(coords_pso)
 
     random_sats = []
     for i in range(n-1):
@@ -156,26 +146,39 @@ def optimize(num_sats, deleted):
     random_percentdiff = 100*(original_constellation.area - random_constellation.area)/original_constellation.area
     # print("Random Satellites: ", random_sats)
     # print("Random Area: ", random_constellation.area)
-    print("Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
-    # print("Random Coordinates", coords_random)
+    print("Random Percent Difference from Original: ", 100*(original_constellation.area - random_constellation.area)/original_constellation.area)
+    # # print("Random Coordinates", coords_random)
     # functions.write_polygon(random_constellation, "random_constellation")
-    with open('random_coordinates.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(coords_random)
 
-    with open('all_sats.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Original'] + list(sats_initial))
-        writer.writerow(['LBFGS-B'] + list(lbfgs_sats.x))
-        writer.writerow(['PSO'] + list(pso_sats))
-        writer.writerow(['Random'] + list(random_sats))
-
-    
+    lbfgs_percentdiff = 0
+    return remaining_percentdiff, lbfgs_percentdiff, pso_percentdiff, random_percentdiff
     
 
 # number of original satellites
 n = 20
 # lose this many satellites
-missing = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
+missing = [0] 
+num_missing = len(missing)
+remaining_percentdiff = []
+lbfgs_percentdiff = []
+pso_percentdiff = []
+random_percentdiff = []
 
-optimize(n, missing)
+for i in range(1, 31):
+    r_percentdiff, l_percentdiff, p_percentdiff, rand_percentdiff = optimize(n, missing)
+    remaining_percentdiff.append(r_percentdiff)
+    lbfgs_percentdiff.append(l_percentdiff)
+    pso_percentdiff.append(p_percentdiff)
+    random_percentdiff.append(rand_percentdiff)
+
+print("Average Percent Difference No Optimization",sum(remaining_percentdiff)/len(remaining_percentdiff))
+# print("Average Percent Difference DiffEv + LBFGS-B",sum(lbfgs_percentdiff)/len(lbfgs_percentdiff))
+print("Average Percent Difference PSO",sum(pso_percentdiff)/len(pso_percentdiff))
+print("Average Percent Difference Random",sum(random_percentdiff)/len(random_percentdiff))
+
+with open(f'avg_percent_diffs_{num_missing}.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['Remaining'] + [sum(remaining_percentdiff)/len(remaining_percentdiff)])
+    # writer.writerow(['LBFGS'] + [sum(lbfgs_percentdiff)/len(lbfgs_percentdiff)])
+    writer.writerow(['PSO'] + [sum(pso_percentdiff)/len(pso_percentdiff)])
+    writer.writerow(['Random'] + [sum(random_percentdiff)/len(random_percentdiff)])
